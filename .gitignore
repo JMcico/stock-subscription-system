@@ -1,0 +1,14 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+.env
+
+# Node
+node_modules/
+dist/
+.eslintcache
+
+# DB & OS
+db.sqlite3
+.DS_Store
