@@ -2,7 +2,9 @@
 venv/
 __pycache__/
 *.pyc
+# Secrets — never commit (matches repo root and subdirs e.g. backend/.env)
 .env
+**/.env
 
 # Node
 node_modules/
@@ -12,3 +14,6 @@ dist/
 # DB & OS
 db.sqlite3
 .DS_Store
+
+# Local-only interview brief — not for public repo
+software-engineer-2nd-round-take-home-project.pdf

@@ -75,3 +75,22 @@
 
 - 编写生产环境配置文件。
 - 准备部署至云平台（具体平台与流程在实施阶段确定）。
+
+
+# 开发日志 (Dev Log)
+
+| 完成时间 (UTC+0 日期) | 已完成工作摘要 | AI 工具 |
+|----------------------|----------------|---------|
+| 2026-04-04 | 编写根目录 `README.md`（Overview、技术栈、Getting Started、Key Features、AI 使用说明、Decisions & Assumptions）。 | Cursor Agent |
+| 2026-04-04 | 整理本文件上半部分为分阶段「项目计划 & 任务拆解」（Markdown 结构化）。 | Cursor Agent |
+| 2026-04-04 | 新增 `backend/requirements.txt`（按当时虚拟环境 `pip list` 固定版本；后追加 `python-dotenv`）。 | Cursor Agent |
+| 2026-04-04 | 核对 README 所列依赖：前端 `npm install` / `npm run build` 通过；后端包可安装并 `manage.py check` 通过；补全 Tailwind v4 入口 `@import "tailwindcss"`（`frontend/src/index.css`）。 | Cursor Agent |
+| 2026-04-04 | Django：`INSTALLED_APPS` 注册 `rest_framework`、`corsheaders`；`CorsMiddleware`；`CORS_ALLOWED_ORIGINS` 含 Vite 默认端口；数据库在设置 `POSTGRES_*` 时用 PostgreSQL，否则 SQLite；`load_dotenv(backend/.env)`。新增 `backend/.env.example`。 | Cursor Agent |
+| 2026-04-04 | 本地 PostgreSQL 就绪后：创建 `backend/.env` 写入 `stock_db` / `postgres` / 本机连接信息；强化 `.gitignore`（`**/.env`）确保密钥文件不进入 GitHub。 | Cursor Agent |
+| 2026-04-04 | **SPEC 模式**：依据 Hextom 二轮 take-home PDF 起草根目录 `spec.md`（需求追溯、数据模型、合并/调度/AI/缓存等）、`tasks.md`（分阶段实现顺序）、`checklist.md`（提交前验收）。 | Cursor Agent |
+| 2026-04-04 | **Jim** 接受并修改 `spec.md` 后，将 `tasks.md`、`checklist.md` 与之对齐（如 `is_staff` 角色、JWT、`last_notified_price`、Django Cache 股价、OpenAI GPT-4o、美东 9–17 整点含 17:00、Send Now 与定时合并规则等）。 | Cursor Agent |
+| 2026-04-04 | `spec.md` §12 Change control 增补 **Revision 1** 脚注（日期 + 与 R0 差异摘要）。 | Cursor Agent |
+
+> **说明**：上表「AI 工具」统一记为 **Cursor Agent**（Cursor 内置对话式 Agent；底层模型由 Cursor 路由，会话内未固定单一模型名称）。若需精确到某次对话的模型，可在 Cursor 界面导出或查看用量详情后手工补一行。
+
+---
