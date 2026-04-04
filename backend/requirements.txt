@@ -10,6 +10,7 @@ curl_cffi==0.13.0
 Django==6.0.3
 django-cors-headers==4.9.0
 djangorestframework==3.17.1
+djangorestframework-simplejwt==5.5.1
 frozendict==2.4.7
 idna==3.11
 multitasking==0.0.12

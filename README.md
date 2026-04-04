@@ -27,18 +27,33 @@
 4. 配置环境变量或 `settings.py` 中的 PostgreSQL 连接信息。
 5. 执行迁移：`python manage.py migrate`
 6. 启动开发服务器：`python manage.py runserver`
+7. **管理员账号**：执行 `python manage.py createsuperuser` 创建 `is_staff=True` 的管理员（用于 Admin 权限与 Django admin）。
+
+### API 认证（JWT，SimpleJWT）
+
+- `POST /api/auth/register/` — 注册普通用户（`is_staff=False`），请求体 JSON：**必填** `username`（须为**合法邮箱格式**，作为登录账号；服务端会规范为小写并写入 `User.email`）、**必填** `password`（≥8 字符，经 Django 密码校验）。响应含 `access`、`refresh` 与用户摘要。详见 **`docs/API.md`**。
+- `POST /api/auth/token/` — 登录，请求体：`username`（注册时使用的邮箱）、`password`。响应：`access`、`refresh`。
+- `POST /api/auth/token/refresh/` — 请求体：`refresh`。响应：新的 `access`。
+- 业务接口默认需在 Header 携带：`Authorization: Bearer <access>`。
+- **Token 有效期**：Access **15 分钟**，Refresh **1 天**（见 `backend/core/settings.py` 中 `SIMPLE_JWT`）。未启用 refresh rotation / blacklist；生产环境可按需开启 `rest_framework_simplejwt` 的黑名单应用。
 
 ### 前端（React + Vite）
 
 1. 进入前端目录：`cd frontend`
 2. 安装依赖：`npm install`
-3. 启动开发服务器：`npm run dev`
+3. 启动开发服务器：`npm run dev`（默认 `http://localhost:5173`）
+4. 开发时 **需同时运行后端**：Vite 将 **`/api` 代理到** `http://127.0.0.1:8000`，前端请求使用相对路径 `/api/...` 即可。
+5. 路由：`/login`（登录）、`/register`（注册）；登录成功后进入受保护的首页 `/`。表单中的 **Email** 会作为 API 请求体里的 **`username`** 提交。
 
 ## Key Features
 
 - **股票代码实时验证**：通过 yfinance（或等价数据源）校验 Ticker 是否存在。
 - **AI 驱动的投资建议**：对订阅标的生成 Buy / Hold / Sell 及理由（具体模型与接口见实现与 `AI_LOG.md`）。
 - **智能邮件合并发送**：同一用户多只股票合并为一封邮件定时或手动触发。
+
+## API 文档
+
+- 后端 REST 接口说明见 **`docs/API.md`**（已实现接口与规划中的订阅相关路径）。
 
 ## AI Usage & Implementation
 

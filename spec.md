@@ -108,7 +108,9 @@ Build a web application that lets authenticated users subscribe to stock price u
 
 *Exact paths in OpenAPI or README during implementation.*
 
-- `POST /api/auth/token/` — obtain JWT (if SimpleJWT).
+- `POST /api/auth/register/` — create regular user (`is_staff=False`); body **username** (must be a valid **email** string used as login id), **password**; `User.email` is set equal to **username**; returns access + refresh JWT.
+- `POST /api/auth/token/` — obtain JWT pair (username + password).
+- `POST /api/auth/token/refresh/` — refresh access token.
 - `GET/POST /api/subscriptions/` — list (scoped), create.
 - `GET/PATCH/DELETE /api/subscriptions/:id/` — detail, update (if needed), delete.
 - `POST /api/subscriptions/:id/send_now/` — enqueue or sync send.

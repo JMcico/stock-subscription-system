@@ -90,6 +90,10 @@
 | 2026-04-04 | **SPEC 模式**：依据 Hextom 二轮 take-home PDF 起草根目录 `spec.md`（需求追溯、数据模型、合并/调度/AI/缓存等）、`tasks.md`（分阶段实现顺序）、`checklist.md`（提交前验收）。 | Cursor Agent |
 | 2026-04-04 | **Jim** 接受并修改 `spec.md` 后，将 `tasks.md`、`checklist.md` 与之对齐（如 `is_staff` 角色、JWT、`last_notified_price`、Django Cache 股价、OpenAI GPT-4o、美东 9–17 整点含 17:00、Send Now 与定时合并规则等）。 | Cursor Agent |
 | 2026-04-04 | `spec.md` §12 Change control 增补 **Revision 1** 脚注（日期 + 与 R0 差异摘要）。 | Cursor Agent |
+| 2026-04-04 | **Phase A（A1–A3）**：集成 `djangorestframework-simplejwt`（Access 15m / Refresh 1d）、`REST_FRAMEWORK` 默认 `JWTAuthentication` + `IsAuthenticated`；`api/auth/token/`、`token/refresh/`、`auth/register/`；`subscriptions.permissions` 中 `IsStaffUser`、`IsSubscriptionOwnerOrStaff`；`spec.md` §10 与 `README.md` JWT 说明同步。 | Cursor Agent |
+| 2026-04-04 | 注册：先要求独立必填 `email` 并新增 **`docs/API.md`**；后改为 **以邮箱作为 `username`**（`validate_email`），`User.email` 与规范化小写后的 `username` 一致；更新 `docs/API.md`、`spec.md` §10、`README.md`。 | Cursor Agent |
+| 2026-04-04 | **Phase A A4/A5**：`EnsureApiTrailingSlashMiddleware`（`/api` 无尾斜杠 → 308）；前端 `react-router-dom`、登录/注册页（Email→`username`）、`AuthProvider`、`ProtectedRoute`/`GuestRoute`、Vite `/api` 代理。 | Cursor Agent |
+| 2026-04-04 | **验收**：维护者本地验证注册/登录 UI 与流程正常；已勾选 `tasks.md` A4/A5、`checklist.md` 相关项（§9 技术栈、前端质量、SPEC hygiene；§6 / §3 记进度说明）。 | Cursor Agent |
 
 > **说明**：上表「AI 工具」统一记为 **Cursor Agent**（Cursor 内置对话式 Agent；底层模型由 Cursor 路由，会话内未固定单一模型名称）。若需精确到某次对话的模型，可在 Cursor 界面导出或查看用量详情后手工补一行。
 

@@ -6,11 +6,11 @@ Derived from `spec.md` (accepted). Work top-to-bottom unless parallelized. Mark 
 
 ## Phase A — Auth & API skeleton
 
-1. **A1** Add JWT (`djangorestframework-simplejwt`), wire URLs and settings (access/refresh lifetimes, rotation — document in README).
-2. **A2** User provisioning: `createsuperuser` for admin (`is_staff=True`); regular users `is_staff=False` — optional `POST /api/auth/register/` or seed users only; document chosen path.
-3. **A3** DRF: subscription routes require `IsAuthenticated`; permission classes distinguish **regular** (`is_staff=False`, queryset = own) vs **admin** (`is_staff=True`, queryset = all) per `spec.md` §3.
-4. **A4** Frontend: login screen; store access/refresh token; attach `Authorization: Bearer`; logout clears storage.
-5. **A5** Frontend route guard: unauthenticated → login.
+- [x] **A1** Add JWT (`djangorestframework-simplejwt`), wire URLs and settings (access/refresh lifetimes, rotation — document in README).
+- [x] **A2** User provisioning: `createsuperuser` for admin (`is_staff=True`); regular users `is_staff=False` — optional `POST /api/auth/register/` or seed users only; document chosen path.
+- [x] **A3** DRF: subscription routes require `IsAuthenticated`; permission classes distinguish **regular** (`is_staff=False`, queryset = own) vs **admin** (`is_staff=True`, queryset = all) per `spec.md` §3.
+- [x] **A4** Frontend: login screen; store access/refresh token; attach `Authorization: Bearer`; logout clears storage.
+- [x] **A5** Frontend route guard: unauthenticated → login.
 
 ---
 

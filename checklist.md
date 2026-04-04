@@ -15,7 +15,8 @@ Use this before opening a PR or sending the submission link. Items map to the PD
 
 ## `spec.md` alignment (accepted baseline)
 
-- [ ] **§3 Roles:** Regular = `is_staff=False` (own subscriptions, Send Now on own rows); Admin = `is_staff=True` (all subscriptions, delete any). JWT `Authorization: Bearer` documented.
+- [ ] **§3 Roles:** Regular = `is_staff=False` (own subscriptions, Send Now on own rows); Admin = `is_staff=True` (all subscriptions, delete any). JWT `Authorization: Bearer` documented.  
+  - *Progress:* JWT 与前端 token 存储/路由守卫已落地；**订阅级** Regular/Admin 行为待实现。
 - [ ] **§5 Model:** `Subscription` includes **`last_notified_price`** (updated on successful send per implementation/tasks).
 - [ ] **§6 Merge:** Periodic + **Send Now** merge by **normalized subscriber_email** within the **same user** for that action.
 - [ ] **§8 Schedule:** Mon–Fri, `America/New_York`, hourly **09:00–17:00 inclusive** (nine fires including 17:00).
@@ -33,9 +34,10 @@ Use this before opening a PR or sending the submission link. Items map to the PD
 - [ ] **§3** Hourly emails Mon–Fri, 9 AM–5 PM **Eastern** — matches `spec.md` §8.
 - [ ] **§4** Same recipient email + multiple tickers → **one merged** email (periodic + Send Now per §6).
 - [ ] **§5** Yahoo/`yfinance` primary; **mock** documented and testable.
-- [ ] **§6** Login; regular = **own** only; admin = **all** (`is_staff`).
+- [ ] **§6** Login; regular = **own** only; admin = **all** (`is_staff`).  
+  - *Progress:* **Secure login + JWT + 注册/登录 UI** 已本地验证；订阅级权限待 Subscription API/UI。
 - [ ] **§8** Self-chosen feature + README (what / why / value).
-- [ ] **§9** Stack: Django + PostgreSQL + React + Tailwind.
+- [x] **§9** Stack: Django + PostgreSQL + React + Tailwind.
 - [ ] **§11** Repo link + **hosted** URL work for reviewers.
 - [ ] **§12** **AI usage** in `AI_LOG.md` (plan, prompts, fixes, verification).
 
@@ -64,8 +66,8 @@ Use this before opening a PR or sending the submission link. Items map to the PD
 
 ## Frontend quality
 
-- [ ] Tailwind used consistently; layout OK on narrow viewport.
-- [ ] API errors surfaced (validation, network, 401).
+- [x] Tailwind used consistently; layout OK on narrow viewport.
+- [x] API errors surfaced (validation, network, 401). *(登录/注册流程已验证)*
 
 ---
 
@@ -80,4 +82,4 @@ Use this before opening a PR or sending the submission link. Items map to the PD
 ## SPEC hygiene
 
 - [ ] `spec.md` **Revision** footer updated if assumptions change after baseline.
-- [ ] `tasks.md` / this file updated when spec changes (keep in sync).
+- [x] `tasks.md` / this file updated when spec changes (keep in sync). *(Phase A 任务与验收状态已同步)*
