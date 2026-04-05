@@ -93,6 +93,8 @@
 | 2026-04-04 | **Phase A（A1–A3）**：集成 `djangorestframework-simplejwt`（Access 15m / Refresh 1d）、`REST_FRAMEWORK` 默认 `JWTAuthentication` + `IsAuthenticated`；`api/auth/token/`、`token/refresh/`、`auth/register/`；`subscriptions.permissions` 中 `IsStaffUser`、`IsSubscriptionOwnerOrStaff`；`spec.md` §10 与 `README.md` JWT 说明同步。 | Cursor Agent |
 | 2026-04-04 | 注册：先要求独立必填 `email` 并新增 **`docs/API.md`**；后改为 **以邮箱作为 `username`**（`validate_email`），`User.email` 与规范化小写后的 `username` 一致；更新 `docs/API.md`、`spec.md` §10、`README.md`。 | Cursor Agent |
 | 2026-04-04 | **Phase A A4/A5**：`EnsureApiTrailingSlashMiddleware`（`/api` 无尾斜杠 → 308）；前端 `react-router-dom`、登录/注册页（Email→`username`）、`AuthProvider`、`ProtectedRoute`/`GuestRoute`、Vite `/api` 代理。 | Cursor Agent |
+| 2026-04-05 | **Phase B（B1–B7）+ Phase C（C1–C4）**：`Subscription` 模型（含 `last_notified_time`）、`utils`（`validate_ticker_exists`、`get_price` + 缓存 120s、`YFINANCE_MOCK`）、DRF 序列化器与 ViewSet、`validate_ticker`；`docs/API.md` 订阅章节；维护者验收 REST。 | Cursor Agent |
+| 2026-04-05 | **Phase D（D1–D6）**：console/SMTP 邮件、合并 HTML 模板与免责声明、`get_ai_recommendation` / batch、`send_subscription_emails`、`send_now` action；维护者验收 **`/api/subscriptions/<id>/send_now/`** 与终端邮件预览；已同步 `tasks.md` / `checklist.md` / README。 | Cursor Agent |
 | 2026-04-04 | **验收**：维护者本地验证注册/登录 UI 与流程正常；已勾选 `tasks.md` A4/A5、`checklist.md` 相关项（§9 技术栈、前端质量、SPEC hygiene；§6 / §3 记进度说明）。 | Cursor Agent |
 
 > **说明**：上表「AI 工具」统一记为 **Cursor Agent**（Cursor 内置对话式 Agent；底层模型由 Cursor 路由，会话内未固定单一模型名称）。若需精确到某次对话的模型，可在 Cursor 界面导出或查看用量详情后手工补一行。

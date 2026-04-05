@@ -63,6 +63,7 @@ Build a web application that lets authenticated users subscribe to stock price u
   - `subscriber_email` — email receiving updates (may differ from `User.email`; brief asks for email field on subscription).
   - `created_at`, `updated_at`.
   - `last_notified_price`.
+  - `last_notified_time` — timestamp of last outbound notification (email send), nullable until first send.
 
 **Uniqueness assumption:** `(owner, ticker, subscriber_email)` unique to avoid duplicate rows in UI (document if we relax).
 

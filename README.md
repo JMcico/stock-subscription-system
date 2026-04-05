@@ -13,7 +13,7 @@
 | 前端 | React, Vite |
 | 样式 | Tailwind CSS v4 |
 
-（计划中还包括：Django REST framework、JWT 认证、yfinance、邮件与定时任务组件等，详见 `AI_LOG.md`。）
+已实现：**Django REST Framework**、**JWT**、**Subscription** 模型与 REST 接口、`yfinance` + **`YFINANCE_MOCK`** 股价与校验、`django.core.cache` 股价缓存（TTL **120s**）、**合并 HTML 邮件**（console/SMTP）、**OpenAI `gpt-4o`** Demo 信号与 Fallback、**`POST /api/subscriptions/<id>/send_now/`**。**定时调度（美东工作日每小时）**与**前端订阅管理 UI** 待后续阶段；详见 **`docs/API.md`** 与 **`AI_LOG.md`**。
 
 ## Getting Started
 
@@ -24,7 +24,7 @@
    - Windows: `python -m venv venv` → `.\venv\Scripts\activate`
    - macOS/Linux: `python3 -m venv venv` → `source venv/bin/activate`
 3. 安装依赖：`pip install -r requirements.txt`
-4. 配置环境变量或 `settings.py` 中的 PostgreSQL 连接信息。
+4. 配置环境变量或 `settings.py` 中的 PostgreSQL 连接信息（可参考 `backend/.env.example`）。可选：`YFINANCE_MOCK=1`、`PRICE_CACHE_TTL=120`；**合并发信 / AI**：`OPENAI_API_KEY`（未设置则使用占位 Hold 文案）、`OPENAI_MODEL`（默认 `gpt-4o`）；开发默认 **`EMAIL_BACKEND`** 为 **console**（邮件与合并 HTML 在终端输出）。
 5. 执行迁移：`python manage.py migrate`
 6. 启动开发服务器：`python manage.py runserver`
 7. **管理员账号**：执行 `python manage.py createsuperuser` 创建 `is_staff=True` 的管理员（用于 Admin 权限与 Django admin）。
@@ -48,12 +48,12 @@
 ## Key Features
 
 - **股票代码实时验证**：通过 yfinance（或等价数据源）校验 Ticker 是否存在。
-- **AI 驱动的投资建议**：对订阅标的生成 Buy / Hold / Sell 及理由（具体模型与接口见实现与 `AI_LOG.md`）。
-- **智能邮件合并发送**：同一用户多只股票合并为一封邮件定时或手动触发。
+- **AI 驱动的投资建议（Demo）**：OpenAI 批量生成 Buy / Hold / Sell 与简短理由；失败时统一 Fallback（非实盘建议）。
+- **智能邮件合并发送**：同一收件邮箱下多标的合并为一封 HTML 邮件（免责声明）；**`send_now`** 即时触发；定时任务待实现。
 
 ## API 文档
 
-- 后端 REST 接口说明见 **`docs/API.md`**（已实现接口与规划中的订阅相关路径）。
+- 后端 REST 说明见 **`docs/API.md`**：认证、`validate_ticker`、订阅 CRUD、**`POST /api/subscriptions/<id>/send_now/`**（合并发信）、环境变量与错误示例。
 
 ## AI Usage & Implementation
 

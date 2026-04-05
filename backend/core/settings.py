@@ -164,3 +164,30 @@ SIMPLE_JWT = {
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
     'ROTATE_REFRESH_TOKENS': True,
 }
+
+# Stock quotes: django.core.cache (LocMem dev; swap to Redis in production if needed)
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'stock-subscription-price-cache',
+    }
+}
+
+# True → get_price() uses random prices; validate_ticker still prefers real yfinance checks.
+YFINANCE_MOCK = os.environ.get('YFINANCE_MOCK', '0').lower() in (
+    '1',
+    'true',
+    'yes',
+)
+PRICE_CACHE_TTL = int(os.environ.get('PRICE_CACHE_TTL', '120'))
+
+# Email (Phase D): console backend for dev; set SMTP_* + EMAIL_BACKEND in production.
+EMAIL_BACKEND = os.environ.get(
+    'EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend'
+)
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@stock-subscription.local')
+SERVER_EMAIL = DEFAULT_FROM_EMAIL
+
+# OpenAI (demo signals — not financial advice)
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
+OPENAI_MODEL = os.environ.get('OPENAI_MODEL', 'gpt-4o')

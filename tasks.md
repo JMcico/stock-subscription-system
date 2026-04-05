@@ -16,33 +16,35 @@ Derived from `spec.md` (accepted). Work top-to-bottom unless parallelized. Mark 
 
 ## Phase B — Subscription model, validation & price cache
 
-6. **B1** Django app (e.g. `subscriptions`) + `Subscription` model: `owner`, `ticker`, `subscriber_email`, `created_at`, `updated_at`, **`last_notified_price`** (nullable); unique `(owner, ticker, subscriber_email)`; migrations on PostgreSQL.
-7. **B2** `yfinance` ticker validation (real path); clear errors for invalid/unknown symbols.
-8. **B3** Mock fallback (env e.g. `YFINANCE_MOCK=1` or settings flag); unit test at least one real and one mock path.
-9. **B4** Serializers + validation on create; enforce uniqueness.
-10. **B5** Optional `POST /api/validate_ticker/` for async UI checks.
-11. **B6** Configure **Django cache** (`CACHES`) per `spec.md` §11 — local: `LocMemCache` or file; prod: document Redis if used; single code path for dev.
-12. **B7** Shared **`get_price(ticker)`** (or equivalent): read-through cache with **TTL** documented in README; used by list UI, Send Now, and scheduler (avoid hammering Yahoo).
+- [x] **B1** Django app (e.g. `subscriptions`) + `Subscription` model: `owner` (FK User), `ticker`, `subscriber_email`, `created_at`, `updated_at`, **`last_notified_price`**, **`last_notified_time`** (nullable); unique `(owner, ticker, subscriber_email)`; migrations on PostgreSQL.
+- [x] **B2** `yfinance` ticker validation (real path); clear errors for invalid/unknown symbols.
+- [x] **B3** Mock fallback (env e.g. `YFINANCE_MOCK=1` or settings flag); unit test at least one real and one mock path.
+- [x] **B4** Serializers + validation on create; enforce uniqueness and the validation on ticker.
+- [x] **B5** Optional `POST /api/validate_ticker/` for async UI checks.
+- [x] **B6** Configure **Django cache** (`CACHES`) per `spec.md` §11 — local: `LocMemCache` or file; prod: document Redis if used; single code path for dev.
+- [x] **B7** Shared **`get_price(ticker)`** via **`django.core.cache`**: cache-first, then yfinance (or mock); **TTL 120s** (`PRICE_CACHE_TTL`); used by list UI, Send Now, and scheduler.
 
 ---
 
 ## Phase C — Subscription CRUD API
 
-13. **C1** ViewSet or list/create: regular users see **only** `owner=request.user`; admin (`is_staff`) sees **all** — same routes, filtered queryset (per `spec.md` §10).
-14. **C2** `GET/PATCH/DELETE /api/subscriptions/:id/` with object-level permission: owner **or** admin.
-15. **C3** `DELETE` allowed for owner or admin (admin support deletes per §3).
-16. **C4** List/detail responses include **current price** from **cached** `get_price` (§11); document TTL and behavior when cache miss / yfinance fails.
+> *Note:* 与 Phase B 同批交付；已与 Phase B 一并验收。
+
+- [x] **C1** ViewSet or list/create: regular users see **only** `owner=request.user`; admin (`is_staff`) sees **all** — same routes, filtered queryset (per `spec.md` §10).
+- [x] **C2** `GET/PATCH/DELETE /api/subscriptions/:id/` with object-level permission: owner **or** admin.
+- [x] **C3** `DELETE` allowed for owner or admin (admin support deletes per §3).
+- [x] **C4** List/detail responses include **current price** from **cached** `get_price` (§11); document TTL and behavior when cache miss / yfinance fails.
 
 ---
 
 ## Phase D — Email + AI (OpenAI GPT-4o)
 
-17. **D1** Email backend: console (dev); SMTP or transactional provider (prod) via `EMAIL_*` env.
-18. **D2** Templates: HTML + text; fixed **not financial advice** disclaimer footer.
-19. **D3** **OpenAI API — GPT-4o** per `spec.md` §9: env `OPENAI_API_KEY` (and optional model override); build `{ signal, reason }`; timeout + **fallback** string if API fails (document).
-20. **D4** Merge builder: group by normalized `subscriber_email`; one MIME message with each ticker’s price + AI line + disclaimer.
-21. **D5** `POST .../send_now/`: per `spec.md` §6 — merge **same subscriber_email within that user** for that action; send; on success update each included row’s **`last_notified_price`** to the price sent.
-22. **D6** Logging: email failures + mock yfinance + AI fallback traceable in logs.
+- [x] **D1** Email backend: console (dev); SMTP or transactional provider (prod) via `EMAIL_*` env.
+- [x] **D2** Templates: HTML + text; fixed **not financial advice** disclaimer footer.
+- [x] **D3** **OpenAI API — GPT-4o** per `spec.md` §9: env `OPENAI_API_KEY` (and optional model override); build `{ signal, reason }`; timeout + **fallback** string if API fails (document).
+- [x] **D4** Merge builder: group by normalized `subscriber_email`; one MIME message with each ticker’s price + AI line + disclaimer.
+- [x] **D5** `POST .../send_now/`: per `spec.md` §6 — merge **same subscriber_email within that user** for that action; send; on success update each included row’s **`last_notified_price`** / **`last_notified_time`**.
+- [x] **D6** Logging: email failures + mock yfinance + AI fallback traceable in logs.
 
 ---
 

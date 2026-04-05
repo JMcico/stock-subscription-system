@@ -15,6 +15,7 @@ frozendict==2.4.7
 idna==3.11
 multitasking==0.0.12
 numpy==2.4.4
+openai==1.109.1
 pandas==3.0.2
 peewee==4.0.4
 platformdirs==4.9.4
