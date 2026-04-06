@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext.jsx'
 export default function GuestRoute({ children }) {
   const { isAuthenticated } = useAuth()
   if (isAuthenticated) {
-    return <Navigate to="/" replace />
+    return <Navigate to="/dashboard" replace />
   }
   return children
 }

@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 import os
 from datetime import timedelta
 from pathlib import Path
+from urllib.parse import urlparse
 
 from dotenv import load_dotenv
 
@@ -49,7 +50,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
-    'subscriptions',
+    'django_q',
+    'subscriptions.apps.SubscriptionsConfig',
 ]
 
 MIDDLEWARE = [
@@ -165,12 +167,50 @@ SIMPLE_JWT = {
     'ROTATE_REFRESH_TOKENS': True,
 }
 
-# Stock quotes: django.core.cache (LocMem dev; swap to Redis in production if needed)
+# Stock quotes: Redis (cross-process); override with REDIS_CACHE_URL
+REDIS_CACHE_URL = os.environ.get('REDIS_CACHE_URL', 'redis://127.0.0.1:6379/1')
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'stock-subscription-price-cache',
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': REDIS_CACHE_URL,
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        },
+        'KEY_PREFIX': 'stock',
+        'TIMEOUT': None,
     }
+}
+
+# Django Q2 — broker on separate Redis DB from cache (REDIS_Q_URL or REDIS_Q_*)
+def _parse_redis_url(url: str) -> dict:
+    u = urlparse(url)
+    path = (u.path or '').lstrip('/')
+    db = int(path) if path.isdigit() else int(os.environ.get('REDIS_Q_DB', '2'))
+    return {
+        'host': u.hostname or '127.0.0.1',
+        'port': u.port or 6379,
+        'db': db,
+        'password': u.password or os.environ.get('REDIS_Q_PASSWORD') or None,
+    }
+
+
+REDIS_Q_URL = os.environ.get('REDIS_Q_URL', 'redis://127.0.0.1:6379/2')
+_q_redis = _parse_redis_url(REDIS_Q_URL)
+if os.environ.get('REDIS_Q_HOST'):
+    _q_redis['host'] = os.environ['REDIS_Q_HOST']
+if os.environ.get('REDIS_Q_PORT'):
+    _q_redis['port'] = int(os.environ['REDIS_Q_PORT'])
+if os.environ.get('REDIS_Q_DB'):
+    _q_redis['db'] = int(os.environ['REDIS_Q_DB'])
+
+Q_CLUSTER = {
+    'name': 'stock_subscription',
+    'workers': 4,
+    'timeout': 120,
+    'retry': 180,
+    'queue_limit': 100,
+    'bulk': 10,
+    'redis': _q_redis,
 }
 
 # True → get_price() uses random prices; validate_ticker still prefers real yfinance checks.

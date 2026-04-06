@@ -32,7 +32,7 @@ export default function RegisterPage() {
     setLoading(true)
     try {
       await register(email, password)
-      navigate('/', { replace: true })
+      navigate('/dashboard', { replace: true })
     } catch (err) {
       if (err.fieldErrors) {
         setError(formatFieldErrors(err.fieldErrors) || err.message)

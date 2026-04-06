@@ -6,9 +6,9 @@ export default function LoginPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const from = location.state?.from?.pathname || '/'
+  const from = location.state?.from?.pathname || '/dashboard'
 
-  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -18,7 +18,7 @@ export default function LoginPage() {
     setError('')
     setLoading(true)
     try {
-      await login(email, password)
+      await login(username, password)
       navigate(from, { replace: true })
     } catch (err) {
       setError(err.message || 'Login failed')
@@ -33,15 +33,15 @@ export default function LoginPage() {
         <h1 className="auth-title">Sign in</h1>
         <form onSubmit={handleSubmit} className="auth-form">
           <label className="auth-label">
-            Email
+            Username
             <input
-              type="email"
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              type="text"
+              autoComplete="username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               required
               className="auth-input"
-              placeholder="you@example.com"
+              placeholder="name@example.com"
             />
           </label>
           <label className="auth-label">

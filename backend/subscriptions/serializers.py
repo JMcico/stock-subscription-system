@@ -1,5 +1,6 @@
 import logging
 
+from django.contrib.auth import get_user_model
 from django.db import IntegrityError
 from rest_framework import serializers
 
@@ -13,11 +14,17 @@ class SubscriptionSerializer(serializers.ModelSerializer):
     """Create/list subscription rows; ticker validated against Yahoo Finance (or mock rules)."""
 
     current_price = serializers.SerializerMethodField(read_only=True)
+    owner = serializers.SerializerMethodField(read_only=True)
+    owner_id = serializers.IntegerField(read_only=True)
+    target_owner_id = serializers.IntegerField(write_only=True, required=False)
 
     class Meta:
         model = Subscription
         fields = (
             'id',
+            'owner',
+            'owner_id',
+            'target_owner_id',
             'ticker',
             'subscriber_email',
             'current_price',
@@ -28,12 +35,20 @@ class SubscriptionSerializer(serializers.ModelSerializer):
         )
         read_only_fields = (
             'id',
+            'owner',
+            'owner_id',
             'current_price',
             'last_notified_price',
             'last_notified_time',
             'created_at',
             'updated_at',
         )
+
+    def get_owner(self, obj):
+        owner = getattr(obj, 'owner', None)
+        if owner is None:
+            return None
+        return owner.email or owner.username
 
     def get_current_price(self, obj):
         try:
@@ -52,7 +67,15 @@ class SubscriptionSerializer(serializers.ModelSerializer):
         return value.strip().lower()
 
     def create(self, validated_data):
-        validated_data['owner'] = self.context['request'].user
+        request = self.context['request']
+        target_owner_id = validated_data.pop('target_owner_id', None)
+        if request.user.is_staff and target_owner_id:
+            owner = get_user_model().objects.filter(pk=target_owner_id).first()
+            if owner is None:
+                raise serializers.ValidationError({'target_owner_id': ['User not found.']})
+            validated_data['owner'] = owner
+        else:
+            validated_data['owner'] = request.user
         try:
             return Subscription.objects.create(**validated_data)
         except IntegrityError:

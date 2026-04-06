@@ -50,20 +50,23 @@ Derived from `spec.md` (accepted). Work top-to-bottom unless parallelized. Mark 
 
 ## Phase E — Scheduling
 
-23. **E1** Choose Celery / Django-Q / `django-crontab` + management command; deps + README ops (worker, beat/cron).
-24. **E2** Hourly job: `America/New_York`, Mon–Fri, **09:00–17:00 inclusive** (nine ticks incl. 17:00) per `spec.md` §8.
-25. **E3** **Idempotency:** dedupe per subscription per hour (or equivalent) so retries do not double-send §8.
-26. **E4** Scheduled run uses same merge + email + AI + **`last_notified_price`** update paths as Send Now where applicable.
-27. **E5** Local runbook: run worker + scheduler alongside Django.
+- [x] **E1** Choose Django-Q2 + management command; deps + README ops (worker, beat/cron).
+- [x] **E2** Hourly job: `America/New_York`, Mon–Fri, **09:00–17:00 inclusive** (nine ticks incl. 17:00) per `spec.md` §8.
+- [x] **E3** **Idempotency:** dedupe per subscription per hour (or equivalent) so retries do not double-send §8.  
+  - *Implemented rule:* dedupe uses the **NY clock-hour bucket** (`09`, `10`, ...); same hour never resends.
+- [x] **E4** Scheduled run uses same merge + email + AI + **`last_notified_price`** update paths as Send Now where applicable.
+- [x] **E5** Local runbook: run worker + scheduler alongside Django (`python manage.py qcluster`).
 
 ---
 
 ## Phase F — Frontend UI
 
-28. **F1** Subscription form: ticker + email; client email format validation; server errors; loading states.
-29. **F2** Table: ticker, **price** (from API/cache-backed field), email, **Delete**, **Send Now**; confirm delete.
-30. **F3** **Regular** (`is_staff=False`): UI scoped to own data; **Admin**: list all subscriptions (extra column owner optional); same app, role-based fetch or single list endpoint behavior.
-31. **F4** Tailwind polish: responsive, accessible controls.
+- [x] **F1** Subscription form: ticker + email; client email format validation; server errors; loading states.  
+  - *Implemented update:* UI now only inputs `ticker`; `subscriber_email` auto-binds to current login user email.
+- [x] **F2** Table: ticker, **price** (from API/cache-backed field), email, **Delete**, **Send Now**; confirm delete.
+- [x] **F3** **Regular** (`is_staff=False`): UI scoped to own data; **Admin**: list all subscriptions (extra column owner optional); same app, role-based fetch or single list endpoint behavior.
+- [x] **F4** Tailwind polish: responsive, accessible controls.
+  - *Admin UX refinement:* admin token does not persist in browser storage; admin dashboard is user-centric (all non-staff users shown, including users without subscriptions), supports per-owner `Send Now`, per-owner `Delete User` (confirm), search user, and per-owner `New Subscription`.
 
 ---
 

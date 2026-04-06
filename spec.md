@@ -41,7 +41,7 @@ Build a web application that lets authenticated users subscribe to stock price u
 
 | ID | Brief § | Requirement |
 |----|---------|-------------|
-| FR-1 | 1 | Web UI: form with **ticker** + **email**. Validate email format (RFC-practical). Validate ticker is a **real** symbol via `yfinance` (or agreed fallback). |
+| FR-1 | 1 | Web UI subscription create uses **ticker** input; regular user subscription email auto-binds to current account email. Validate ticker is a **real** symbol via `yfinance` (or agreed fallback). |
 | FR-2 | 2 | Web UI: table/list of subscriptions showing **ticker**, **current price**, **email**, **Delete**, **Send Now**. |
 | FR-3 | 2, 7 | **Send Now** sends one email to that subscription’s email with current price(s) for that logical send unit and **AI Buy/Hold/Sell + short reason** per stock (demo disclaimer in email body). |
 | FR-4 | 3 | **Periodic send:** every **hour**, **Mon–Fri**, **09:00–17:00 America/New_York** (inclusive window — see §8). |
@@ -51,6 +51,7 @@ Build a web application that lets authenticated users subscribe to stock price u
 | FR-8 | 7 | AI recommendation: exactly one of Buy / Hold / Sell + short reason per stock; lightweight integration acceptable if documented. |
 | FR-9 | 8 | **One self-chosen enhancement** — see §7. |
 | FR-10 | 11–12 | Deployed demo + repo; **AI usage record** maintained (extend `AI_LOG.md`). |
+| FR-11 | Admin UX | Admin dashboard is user-centric: list all non-staff users (including users without subscriptions), allow per-owner `Send Now`, per-owner `Delete User` (with confirmation), and per-owner subscription creation. |
 
 ---
 
@@ -92,7 +93,8 @@ Build a web application that lets authenticated users subscribe to stock price u
 - **Days:** Monday–Friday (weekday calendar in that TZ).
 - **Hours:** 09:00–17:00 inclusive of both endpoints — **interpretation:** fire at 09:00, 10:00, …, 17:00 (nine fires per day). If interview prefers half-open `[09:00, 17:00)`, adjust to eight fires; **current SPEC:** **nine hourly ticks including 5 PM**.
 - **Mechanism:** Celery + Redis/RabbitMQ **or** Django-Q **or** `django-crontab` + management command — **decision:** pick one, document ops setup for deploy.
-- **Idempotency:** Same hour must not double-send same subscription (use DB flag or dedupe key per period).
+- **Idempotency:** Same NY clock hour must not double-send the same subscription (dedupe by `America/New_York` hour bucket, not rolling 60 minutes from last send).  
+  - Within the same NY calendar hour, do **not** resend.
 
 ---
 
@@ -112,7 +114,11 @@ Build a web application that lets authenticated users subscribe to stock price u
 - `POST /api/auth/register/` — create regular user (`is_staff=False`); body **username** (must be a valid **email** string used as login id), **password**; `User.email` is set equal to **username**; returns access + refresh JWT.
 - `POST /api/auth/token/` — obtain JWT pair (username + password).
 - `POST /api/auth/token/refresh/` — refresh access token.
+- `GET /api/auth/me/` — current authenticated user profile (`id`, `username`, `email`, `is_staff`) for frontend role-aware UI.
+- `GET /api/auth/users/` — admin-only user list for dashboard user management (non-staff users).
+- `DELETE /api/auth/users/:id/` — admin-only delete user.
 - `GET/POST /api/subscriptions/` — list (scoped), create.
+- `POST /api/subscriptions/owners/:owner_id/send_now/` — owner-level merged send for admin dashboard.
 - `GET/PATCH/DELETE /api/subscriptions/:id/` — detail, update (if needed), delete.
 - `POST /api/subscriptions/:id/send_now/` — enqueue or sync send.
 - `POST /api/validate_ticker/` — optional dedicated endpoint for async UI validation.
@@ -137,3 +143,11 @@ Updates to this SPEC after review with the team: bump a **Revision** footer (dat
 **Revision 0 — 2026-04-04:** Initial draft from take-home PDF + repo constraints.
 
 **Revision 1 — 2026-04-04:** Accepted baseline after review — Regular/Admin via `is_staff`; JWT + scoped APIs; `Subscription.last_notified_price`; periodic & Send Now email merge by normalized `subscriber_email` per owner; America/New_York Mon–Fri hourly **09:00–17:00 inclusive** (nine ticks); OpenAI **GPT-4o** for Buy/Hold/Sell + reason; **Django cache** for stock prices (`spec.md` §11); `tasks.md` / `checklist.md` synchronized to this spec.
+
+**Revision 2 — 2026-04-06:** Phase E landed with Redis cache + Django-Q2 broker; scheduled hourly checks in `America/New_York`; idempotency clarified to **NY clock-hour bucket** (not rolling 60 minutes), with >1% price-change override.
+
+**Revision 3 — 2026-04-06:** Scheduling rule tightened: periodic notifications are **hour-bucket only** (NY clock hour). Removed same-hour resend path based on >1% price movement.
+
+**Revision 4 — 2026-04-06:** Phase F UI alignment: frontend dashboard uses role-aware rendering (`is_staff`), ticker-only subscription input auto-binds current user email, API surface documents `GET /api/auth/me/` for session/user profile hydration.
+
+**Revision 5 — 2026-04-06:** Admin UX refinement: admin tokens are memory-only in frontend (not persisted in browser storage), dashboard is user-centric (non-staff users list including users without subscriptions), and supports per-owner `Send Now` / `Delete User` / `New Subscription`.

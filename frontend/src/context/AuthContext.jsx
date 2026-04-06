@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import {
   createContext,
   useCallback,
@@ -5,6 +6,7 @@ import {
   useMemo,
   useState,
 } from 'react'
+import { apiFetch } from '../api/client.js'
 
 const STORAGE_ACCESS = 'stockapp_access'
 const STORAGE_REFRESH = 'stockapp_refresh'
@@ -28,16 +30,23 @@ export function AuthProvider({ children }) {
     }
   })
 
-  const persistSession = useCallback((a, r, u) => {
-    if (a) localStorage.setItem(STORAGE_ACCESS, a)
-    else localStorage.removeItem(STORAGE_ACCESS)
-    if (r) localStorage.setItem(STORAGE_REFRESH, r)
-    else localStorage.removeItem(STORAGE_REFRESH)
+  const persistSession = useCallback((a, r, u, opts = {}) => {
+    const persist = opts.persist !== false
+    if (persist) {
+      if (a) localStorage.setItem(STORAGE_ACCESS, a)
+      else localStorage.removeItem(STORAGE_ACCESS)
+      if (r) localStorage.setItem(STORAGE_REFRESH, r)
+      else localStorage.removeItem(STORAGE_REFRESH)
+      if (u) localStorage.setItem(STORAGE_USER, JSON.stringify(u))
+      else localStorage.removeItem(STORAGE_USER)
+    } else {
+      localStorage.removeItem(STORAGE_ACCESS)
+      localStorage.removeItem(STORAGE_REFRESH)
+      localStorage.removeItem(STORAGE_USER)
+    }
     if (u) {
-      localStorage.setItem(STORAGE_USER, JSON.stringify(u))
       setUser(u)
     } else {
-      localStorage.removeItem(STORAGE_USER)
       setUser(null)
     }
     setAccess(a || null)
@@ -45,12 +54,11 @@ export function AuthProvider({ children }) {
   }, [])
 
   const login = useCallback(
-    async (email, password) => {
-      const { apiFetch } = await import('../api/client.js')
+    async (username, password) => {
       const res = await apiFetch('/api/auth/token/', {
         method: 'POST',
         body: JSON.stringify({
-          username: email.trim().toLowerCase(),
+          username: (username || '').trim(),
           password,
         }),
       })
@@ -66,18 +74,29 @@ export function AuthProvider({ children }) {
         }
         throw new Error(msg)
       }
-      const u = {
-        username: email.trim().toLowerCase(),
-        email: email.trim().toLowerCase(),
-      }
-      persistSession(data.access, data.refresh, u)
+      const meRes = await apiFetch('/api/auth/me/', {
+        headers: {
+          Authorization: `Bearer ${data.access}`,
+        },
+      })
+      const meData = await meRes.json().catch(() => ({}))
+      const u = meRes.ok
+        ? meData
+        : {
+            username: (username || '').trim(),
+            email: (username || '').trim(),
+            is_staff: false,
+          }
+      // Admin session is memory-only: do not persist tokens in browser storage.
+      persistSession(data.access, data.refresh, u, {
+        persist: !u?.is_staff,
+      })
     },
     [persistSession],
   )
 
   const register = useCallback(
     async (email, password) => {
-      const { apiFetch } = await import('../api/client.js')
       const res = await apiFetch('/api/auth/register/', {
         method: 'POST',
         body: JSON.stringify({
