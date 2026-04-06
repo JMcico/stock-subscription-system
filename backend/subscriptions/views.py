@@ -1,16 +1,20 @@
 import logging
+from datetime import timedelta
 
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import action
+from rest_framework.mixins import ListModelMixin
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import GenericViewSet, ModelViewSet
 
-from .models import Subscription
+from .models import NotificationLog, Subscription
 from .permissions import IsSubscriptionOwnerOrStaff
-from .serializers import SubscriptionSerializer
+from .serializers import NotificationLogSerializer, SubscriptionSerializer
 from .services import send_subscription_emails
 from .utils import get_price, validate_ticker_exists
 
@@ -31,6 +35,62 @@ class SubscriptionViewSet(ModelViewSet):
         if user.is_staff:
             return qs.all()
         return qs.filter(owner=user)
+
+    @action(detail=False, methods=['get'], url_path='history')
+    def history(self, request):
+        raw = (request.query_params.get('ticker') or '').strip().upper()
+        if not raw:
+            return Response(
+                {'detail': 'ticker is required'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            ticker = validate_ticker_exists(raw)
+        except ValueError as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        cache_key = f'hist_{ticker}'
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(
+                {'ticker': ticker, 'source': 'cache', 'history': cached},
+                status=status.HTTP_200_OK,
+            )
+
+        points: list[dict] = []
+        try:
+            import yfinance as yf
+
+            hist = yf.Ticker(ticker).history(period='14d')
+            if hist.empty:
+                raise ValueError(f'No history data available for "{ticker}".')
+            hist = hist.tail(7)
+            for idx, row in hist.iterrows():
+                points.append(
+                    {
+                        'date': idx.date().isoformat(),
+                        'close_price': f"{float(row['Close']):.4f}",
+                    }
+                )
+        except Exception:
+            if not points:
+                # Mock fallback for dev mode: 7 recent pseudo trading days.
+                now = timezone.now().date()
+                base = float(get_price(ticker))
+                for i in range(7):
+                    d = now - timedelta(days=6 - i)
+                    points.append(
+                        {
+                            'date': d.isoformat(),
+                            'close_price': f'{(base * (1 + (i - 3) * 0.01)):.4f}',
+                        }
+                    )
+
+        cache.set(cache_key, points, timeout=3600)
+        return Response(
+            {'ticker': ticker, 'source': 'fresh', 'history': points},
+            status=status.HTTP_200_OK,
+        )
 
     @action(detail=False, methods=['post'], url_path='send_now')
     def send_now_bulk(self, request):
@@ -202,3 +262,15 @@ class ValidateTickerView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
+class NotificationLogViewSet(ListModelMixin, GenericViewSet):
+    serializer_class = NotificationLogSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        qs = NotificationLog.objects.select_related('owner')
+        if user.is_staff:
+            return qs.all()
+        return qs.filter(owner=user)

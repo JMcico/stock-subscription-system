@@ -14,7 +14,7 @@ from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.utils import timezone
 
-from .models import Subscription
+from .models import NotificationLog, Subscription
 from .utils import get_ai_recommendation, get_ai_recommendations_batch, get_price
 
 if TYPE_CHECKING:
@@ -118,6 +118,7 @@ def send_subscription_emails(user: User, subscriptions: QuerySet | list[Subscrip
         text_body = _build_plain_text(merged_rows, subscriber_email, owner_label)
 
         subject = f'[Demo] Stock update: {", ".join(r["ticker"] for r in merged_rows)}'
+        tickers_summary = ', '.join(r['ticker'] for r in merged_rows)
 
         print('\n' + '=' * 72)
         print('[send_subscription_emails] Merged email HTML (console preview)')
@@ -139,8 +140,20 @@ def send_subscription_emails(user: User, subscriptions: QuerySet | list[Subscrip
             logger.info(
                 'Merged email sent to %s (%d tickers)', subscriber_email, len(rows)
             )
+            NotificationLog.objects.create(
+                owner=user,
+                tickers_summary=tickers_summary,
+                recipient_email=subscriber_email,
+                status=NotificationLog.Status.SUCCESS,
+            )
         except Exception as e:
             logger.exception('Failed to send email to %s: %s', subscriber_email, e)
+            NotificationLog.objects.create(
+                owner=user,
+                tickers_summary=tickers_summary,
+                recipient_email=subscriber_email,
+                status=NotificationLog.Status.FAILED,
+            )
             raise
 
         now = timezone.now()

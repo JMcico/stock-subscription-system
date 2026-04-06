@@ -92,6 +92,25 @@ h2 {
     font-size: 20px;
   }
 }
+
+/* Dashboard heading overrides (avoid global h1/h2 style takeover) */
+.dash-title-main {
+  margin: 10px 0 0 0;
+  font-size: 2rem;
+  line-height: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: #60a5fa;
+}
+
+.dash-title-section {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.25rem;
+  font-weight: 600;
+  color: #60a5fa;
+}
+.da
 p {
   margin: 0;
 }

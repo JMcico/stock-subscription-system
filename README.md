@@ -13,7 +13,7 @@
 | 前端 | React, Vite |
 | 样式 | Tailwind CSS v4 |
 
-已实现：**Django REST Framework**、**JWT**、**Subscription** 模型与 REST 接口、`yfinance` + **`YFINANCE_MOCK`** 股价与校验、基于 **Redis (`django-redis`)** 的跨进程价格缓存（默认 DB 1，TTL **120s**）、**合并 HTML 邮件**（console/SMTP）、**OpenAI `gpt-4o`** Demo 信号与 Fallback、**`POST /api/subscriptions/<id>/send_now/`**、以及基于 **Django-Q2 + Redis Broker** 的周期调度（美东工作日每小时）。Phase F 管理端已支持按用户分组管理（搜索用户、owner 级 Send Now/Delete User、按用户新增订阅）。详见 **`docs/API.md`** 与 **`AI_LOG.md`**。
+已实现：**Django REST Framework**、**JWT**、**Subscription** 模型与 REST 接口、`yfinance` + **`YFINANCE_MOCK`** 股价与校验、基于 **Redis (`django-redis`)** 的跨进程价格缓存（默认 DB 1，TTL **120s**）、**合并 HTML 邮件**（console/SMTP）、**OpenAI `gpt-4o`** Demo 信号与 Fallback、**`POST /api/subscriptions/<id>/send_now/`**、以及基于 **Django-Q2 + Redis Broker** 的周期调度（美东工作日每小时）。Phase F 管理端已支持按用户分组管理（搜索用户、owner 级 Send Now/Delete User、按用户新增订阅）。Phase G 新增 **邮件审计与历史追踪**（`NotificationLog` + dashboard Recent Notifications）。详见 **`docs/API.md`** 与 **`AI_LOG.md`**。
 
 ## Getting Started
 
@@ -61,6 +61,9 @@
 - **智能邮件合并发送**：同一收件邮箱下多标的合并为一封 HTML 邮件（免责声明）；支持 **`send_now`** 与周期任务复用同一链路。
 - **周期调度（Phase E）**：`America/New_York` 周一至周五，`09:00–17:00` 每小时任务；幂等按**纽约整点小时桶**（不是 rolling 60 分钟），同一自然小时严格只发送一次。
 - **Admin 用户管理（Phase F）**：仅显示普通用户（不含管理员），支持用户搜索、owner 级发送、删除用户（二次确认）和按用户新增订阅。
+- **邮件历史追踪（Phase G）**：每次邮件发送自动落库 `NotificationLog`（Success/Failed）；仪表盘提供 `Recent Notifications`（最近 5 条）审计视图。
+- **Ticker 详情分析（Phase G）**：点击 ticker 打开 slide-over，查看最近 7 个交易日价格、7-Day High/Low、Current vs Initial 盈亏比；后端历史数据使用 Redis 缓存 1 小时。
+- **UI 一致性修复**：dashboard 关键标题改为专用样式类，避免被全局 `h1/h2` 规则覆盖，保证尺寸与浅蓝色主题稳定生效。
 
 ## API 文档
 

@@ -52,6 +52,7 @@ Build a web application that lets authenticated users subscribe to stock price u
 | FR-9 | 8 | **One self-chosen enhancement** — see §7. |
 | FR-10 | 11–12 | Deployed demo + repo; **AI usage record** maintained (extend `AI_LOG.md`). |
 | FR-11 | Admin UX | Admin dashboard is user-centric: list all non-staff users (including users without subscriptions), allow per-owner `Send Now`, per-owner `Delete User` (with confirmation), and per-owner subscription creation. |
+| FR-12 | Phase G | Ticker details: provide 7-trading-day history API with Redis cache (`hist_{ticker}`, TTL 1 hour); dashboard ticker opens slide-over with trend/history and summary stats (high/low/pnl). |
 
 ---
 
@@ -65,6 +66,12 @@ Build a web application that lets authenticated users subscribe to stock price u
   - `created_at`, `updated_at`.
   - `last_notified_price`.
   - `last_notified_time` — timestamp of last outbound notification (email send), nullable until first send.
+- **NotificationLog** (Phase G)
+  - `owner` → `User`
+  - `tickers_summary` — compact ticker summary string
+  - `recipient_email` — recipient mailbox
+  - `status` — `Success` / `Failed`
+  - `created_at`
 
 **Uniqueness assumption:** `(owner, ticker, subscriber_email)` unique to avoid duplicate rows in UI (document if we relax).
 
@@ -121,6 +128,8 @@ Build a web application that lets authenticated users subscribe to stock price u
 - `POST /api/subscriptions/owners/:owner_id/send_now/` — owner-level merged send for admin dashboard.
 - `GET/PATCH/DELETE /api/subscriptions/:id/` — detail, update (if needed), delete.
 - `POST /api/subscriptions/:id/send_now/` — enqueue or sync send.
+- `GET /api/notification-logs/` — list notification history (owner-scoped; admin sees all).
+- `GET /api/subscriptions/history/?ticker=...` — ticker 7-day history (`date`, `close_price`), cached in Redis for 1 hour.
 - `POST /api/validate_ticker/` — optional dedicated endpoint for async UI validation.
 - Admin: same routes with broader queryset **or** `GET /api/admin/subscriptions/` — **decision:** filter in viewset via `IsAdminUser` for list all.
 
@@ -151,3 +160,9 @@ Updates to this SPEC after review with the team: bump a **Revision** footer (dat
 **Revision 4 — 2026-04-06:** Phase F UI alignment: frontend dashboard uses role-aware rendering (`is_staff`), ticker-only subscription input auto-binds current user email, API surface documents `GET /api/auth/me/` for session/user profile hydration.
 
 **Revision 5 — 2026-04-06:** Admin UX refinement: admin tokens are memory-only in frontend (not persisted in browser storage), dashboard is user-centric (non-staff users list including users without subscriptions), and supports per-owner `Send Now` / `Delete User` / `New Subscription`.
+
+**Revision 6 — 2026-04-06:** Phase G landed: email send history (`NotificationLog`) integrated into send pipeline; read-only history API and dashboard `Recent Notifications` section added with role-based visibility.
+
+**Revision 7 — 2026-04-06:** Phase G extension: ticker detail slide-over with 7-day history and analytics; backend history endpoint added with Redis key `hist_{ticker}` (TTL 1 hour); dashboard notification panel constrained to latest 5 records.
+
+**Revision 8 — 2026-04-06:** UI polish patch: dashboard heading styles are decoupled from global `h1/h2` CSS via dedicated classes to ensure configured size/color are applied consistently.

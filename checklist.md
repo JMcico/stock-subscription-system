@@ -24,7 +24,7 @@ Use this before opening a PR or sending the submission link. Items map to the PD
   - *Implemented idempotency:* 按纽约时区整点小时桶去重（同一自然小时内不重复发送）。
 - [x] **§9 AI:** **OpenAI GPT-4o**（`OPENAI_MODEL`）；`get_ai_recommendation` / batch；失败 Fallback；见 `docs/API.md`、`backend/.env.example`。
 - [x] **§11 Caching:** **Django cache**（`LocMemCache` dev）用于 **`get_price`**；TTL **120s**（`PRICE_CACHE_TTL`）；见 `docs/API.md` / README。
-- [ ] **§7 Enhancement:** Implemented and explained in README (default candidate: email send history).
+- [x] **§7 Enhancement:** Implemented and explained in README (default candidate: email send history). *(已交付 NotificationLog + API + dashboard Recent Notifications)*
 
 ---
 
@@ -38,7 +38,7 @@ Use this before opening a PR or sending the submission link. Items map to the PD
 - [x] **§5** Yahoo/`yfinance` primary; **mock** documented and testable. *(API + `YFINANCE_MOCK`；`docs/API.md` §5)*
 - [x] **§6** Login; regular = **own** only; admin = **all** (`is_staff`).  
   - *Progress:* 登录与管理界面已完成；admin 登录 token 内存态（不落盘），admin 管理页仅面向普通用户。
-- [ ] **§8** Self-chosen feature + README (what / why / value).
+- [x] **§8** Self-chosen feature + README (what / why / value). *(邮件审计与历史追踪已实现并文档化)*
 - [x] **§9** Stack: Django + PostgreSQL + React + Tailwind.
 - [ ] **§11** Repo link + **hosted** URL work for reviewers.
 - [ ] **§12** **AI usage** in `AI_LOG.md` (plan, prompts, fixes, verification).

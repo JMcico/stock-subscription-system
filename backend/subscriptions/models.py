@@ -31,3 +31,25 @@ class Subscription(models.Model):
 
     def __str__(self):
         return f'{self.ticker} → {self.subscriber_email}'
+
+
+class NotificationLog(models.Model):
+    class Status(models.TextChoices):
+        SUCCESS = 'success', 'Success'
+        FAILED = 'failed', 'Failed'
+
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='notification_logs',
+    )
+    tickers_summary = models.CharField(max_length=255)
+    recipient_email = models.EmailField()
+    status = models.CharField(max_length=10, choices=Status.choices)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'[{self.get_status_display()}] {self.recipient_email} {self.tickers_summary}'

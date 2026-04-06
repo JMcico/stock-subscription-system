@@ -6,7 +6,7 @@ from rest_framework import serializers
 
 logger = logging.getLogger(__name__)
 
-from .models import Subscription
+from .models import NotificationLog, Subscription
 from .utils import get_price, validate_ticker_exists
 
 
@@ -86,6 +86,28 @@ class SubscriptionSerializer(serializers.ModelSerializer):
                     ]
                 }
             ) from None
+
+
+class NotificationLogSerializer(serializers.ModelSerializer):
+    owner = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = NotificationLog
+        fields = (
+            'id',
+            'owner',
+            'tickers_summary',
+            'recipient_email',
+            'status',
+            'created_at',
+        )
+        read_only_fields = fields
+
+    def get_owner(self, obj):
+        owner = getattr(obj, 'owner', None)
+        if owner is None:
+            return None
+        return owner.email or owner.username
 
     def update(self, instance, validated_data):
         try:

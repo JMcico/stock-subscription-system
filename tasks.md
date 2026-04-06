@@ -67,13 +67,18 @@ Derived from `spec.md` (accepted). Work top-to-bottom unless parallelized. Mark 
 - [x] **F3** **Regular** (`is_staff=False`): UI scoped to own data; **Admin**: list all subscriptions (extra column owner optional); same app, role-based fetch or single list endpoint behavior.
 - [x] **F4** Tailwind polish: responsive, accessible controls.
   - *Admin UX refinement:* admin token does not persist in browser storage; admin dashboard is user-centric (all non-staff users shown, including users without subscriptions), supports per-owner `Send Now`, per-owner `Delete User` (confirm), search user, and per-owner `New Subscription`.
+  - *UI fix:* dashboard title styles now use dedicated classes (`.dash-title-main` / `.dash-title-section`) to avoid global `h1/h2` CSS override.
 
 ---
 
 ## Phase G — Self-chosen enhancement
 
-32. **G1** Implement pick from `spec.md` §7 (default: **email send history** — model + API + minimal UI or admin).
-33. **G2** README: what / why / value; align with submission notes.
+- [x] **G1** Implement pick from `spec.md` §7 (default: **email send history** — model + API + minimal UI or admin).
+  - *Delivered:* `NotificationLog` model + send pipeline integration + read-only list API + dashboard `Recent Notifications` table (role-scoped).
+- [x] **G2** README: what / why / value; align with submission notes.
+  - *G1.1 delivered:* ticker history API (`GET /api/subscriptions/history/?ticker=...`) with Redis cache key `hist_{ticker}` and 1-hour TTL.
+  - *G1.2 delivered:* dashboard ticker click opens slide-over with 7-day history list + 7-Day High/Low + Current vs Initial PnL%.
+  - *G1.3 delivered:* dashboard `Recent Notifications` shows latest 5 logs.
 
 ---
 

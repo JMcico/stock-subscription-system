@@ -478,6 +478,70 @@ Content-Type: application/json
 
 ---
 
+### 2.11 通知历史（Notification Logs）
+
+| 项目 | 说明 |
+|------|------|
+| **Method / Path** | `GET /api/notification-logs/` |
+| **鉴权** | 需登录 |
+
+权限行为：
+
+- 普通用户仅返回自己的通知历史；
+- 管理员返回所有通知历史。
+
+**成功响应** `200 OK`
+
+```json
+[
+  {
+    "id": 12,
+    "owner": "alice@example.com",
+    "tickers_summary": "AAPL, MSFT",
+    "recipient_email": "alice@example.com",
+    "status": "success",
+    "created_at": "2026-04-06T09:00:05.123456Z"
+  }
+]
+```
+
+说明：日志在邮件发送链路内自动写入（成功/失败均会记录一条）。
+
+---
+
+### 2.12 Ticker 7 天历史
+
+| 项目 | 说明 |
+|------|------|
+| **Method / Path** | `GET /api/subscriptions/history/?ticker=<SYMBOL>` |
+| **鉴权** | 需登录 |
+
+**返回字段**
+
+- `ticker`: 标准化后的代码
+- `history`: 最近 7 个交易日（`date`, `close_price`）
+- `source`: `cache` 或 `fresh`
+
+**缓存策略**
+
+- Redis key：`hist_{ticker}`
+- TTL：`3600s`（1 小时）
+
+**成功响应示例**
+
+```json
+{
+  "ticker": "AAPL",
+  "source": "cache",
+  "history": [
+    {"date": "2026-03-31", "close_price": "211.1500"},
+    {"date": "2026-04-01", "close_price": "212.0200"}
+  ]
+}
+```
+
+---
+
 ## 3. 定时任务与队列（Phase E）— 已实现
 
 > 说明：该部分为后端任务系统行为，不是对外 HTTP 接口。
@@ -555,3 +619,5 @@ python manage.py qcluster --run-once
 | 2026-04-06 | Phase F 对齐：新增 `GET /api/auth/me/`；订阅返回补充只读 `owner` 字段供管理员表格显示。 |
 | 2026-04-06 | Dashboard 交互更新：新增 `POST /api/subscriptions/send_now/` 一键发送；登录字段说明调整为 username 匹配登录（不做邮箱格式校验）。 |
 | 2026-04-06 | Admin 管理增强：新增 `GET /api/auth/users/`、`DELETE /api/auth/users/<id>/`、`POST /api/subscriptions/owners/<owner_id>/send_now/`，并支持 admin 通过 `target_owner_id` 代用户新增订阅。 |
+| 2026-04-06 | Phase G：新增 `NotificationLog` 历史追踪，开放 `GET /api/notification-logs/`，并在发送链路中自动记录 Success/Failed 日志。 |
+| 2026-04-06 | Phase G 扩展：新增 `GET /api/subscriptions/history/`（7 天历史 + Redis 1h 缓存）并在 dashboard 加入 ticker slide-over 详情分析。 |
