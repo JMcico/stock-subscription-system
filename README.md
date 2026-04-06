@@ -31,7 +31,8 @@
    - 可选覆盖：`REDIS_Q_HOST` / `REDIS_Q_PORT` / `REDIS_Q_DB` / `REDIS_Q_PASSWORD`
    - 行情与缓存：`YFINANCE_MOCK=1`、`PRICE_CACHE_TTL=120`
    - 合并发信 / AI：`OPENAI_API_KEY`（未设置则使用占位 Hold 文案）、`OPENAI_MODEL`（默认 `gpt-4o`）
-   - 邮件：开发默认 **`EMAIL_BACKEND`** 为 **console**（邮件与合并 HTML 在终端输出）
+   - 邮件（生产 Gmail SMTP）：`USE_GMAIL_SMTP=1`、`EMAIL_HOST_USER`、`EMAIL_HOST_PASSWORD`（Google App Password）、`DEFAULT_FROM_EMAIL`
+   - 邮件（开发）：默认 **`EMAIL_BACKEND`** 为 **console**（邮件与合并 HTML 在终端输出）
 5. 执行迁移：`python manage.py migrate`
 6. 启动 Django API：`python manage.py runserver`
 7. 启动任务集群（worker + scheduler）：`python manage.py qcluster`
@@ -59,6 +60,7 @@
 - **股票代码实时验证**：通过 yfinance（或等价数据源）校验 Ticker 是否存在。
 - **AI 驱动的投资建议（Demo）**：OpenAI 批量生成 Buy / Hold / Sell 与简短理由；失败时统一 Fallback（非实盘建议）。
 - **智能邮件合并发送**：同一收件邮箱下多标的合并为一封 HTML 邮件（免责声明）；支持 **`send_now`** 与周期任务复用同一链路。
+- **异步 Send Now（生产友好）**：`send_now` 相关接口通过 Django-Q2 `async_task` 入队，不在 HTTP 请求周期内直接发信，避免 SMTP 慢响应阻塞前端。
 - **周期调度（Phase E）**：`America/New_York` 周一至周五，`09:00–17:00` 每小时任务；幂等按**纽约整点小时桶**（不是 rolling 60 分钟），同一自然小时严格只发送一次。
 - **Admin 用户管理（Phase F）**：仅显示普通用户（不含管理员），支持用户搜索、owner 级发送、删除用户（二次确认）和按用户新增订阅。
 - **邮件历史追踪（Phase G）**：每次邮件发送自动落库 `NotificationLog`（Success/Failed）；仪表盘提供 `Recent Notifications`（最近 5 条）审计视图。

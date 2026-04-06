@@ -16,6 +16,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from dotenv import load_dotenv
+from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -27,16 +28,22 @@ load_dotenv(BASE_DIR / '.env')
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-((2qj68-==c^%cq8gbpr89@_vqgb&11!mn68@a@y9s6qukdby_'
+SECRET_KEY = os.environ.get('SECRET_KEY')
+if not SECRET_KEY:
+    raise ImproperlyConfigured('SECRET_KEY is required. Set it in backend/.env')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [h.strip() for h in os.environ.get('ALLOWED_HOSTS', '*').split(',') if h.strip()] or ['*']
+CSRF_TRUSTED_ORIGINS = [
+    o.strip()
+    for o in os.environ.get('CSRF_TRUSTED_ORIGINS', 'https://*.up.railway.app').split(',')
+    if o.strip()
+]
 
 # Trailing slashes in urlpatterns; CommonMiddleware also appends slash on 404.
 APPEND_SLASH = True
-
 
 # Application definition
 
@@ -56,6 +63,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'core.middleware.EnsureApiTrailingSlashMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -89,8 +97,27 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-# PostgreSQL when POSTGRES_DB is set (e.g. via backend/.env); otherwise SQLite for local dev.
-if os.environ.get('POSTGRES_DB'):
+def _database_from_url(url: str) -> dict:
+    u = urlparse(url)
+    if u.scheme in ('postgres', 'postgresql'):
+        return {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': (u.path or '').lstrip('/') or 'postgres',
+            'USER': u.username or 'postgres',
+            'PASSWORD': u.password or '',
+            'HOST': u.hostname or 'localhost',
+            'PORT': str(u.port or 5432),
+        }
+    if u.scheme == 'sqlite':
+        name = (u.path or '').lstrip('/') or str(BASE_DIR / 'db.sqlite3')
+        return {'ENGINE': 'django.db.backends.sqlite3', 'NAME': name}
+    raise ImproperlyConfigured(f'Unsupported DATABASE_URL scheme: {u.scheme}')
+
+
+DATABASE_URL = os.environ.get('DATABASE_URL', '').strip()
+if DATABASE_URL:
+    DATABASES = {'default': _database_from_url(DATABASE_URL)}
+elif os.environ.get('POSTGRES_DB'):
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
@@ -150,6 +177,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Django REST framework — global auth; per-view AllowAny for login/register/refresh
 REST_FRAMEWORK = {
@@ -167,8 +196,9 @@ SIMPLE_JWT = {
     'ROTATE_REFRESH_TOKENS': True,
 }
 
-# Stock quotes: Redis (cross-process); override with REDIS_CACHE_URL
-REDIS_CACHE_URL = os.environ.get('REDIS_CACHE_URL', 'redis://127.0.0.1:6379/1')
+# Stock quotes: Redis (cross-process); Railway injects REDIS_URL.
+REDIS_URL = os.environ.get('REDIS_URL', 'redis://127.0.0.1:6379/0')
+REDIS_CACHE_URL = os.environ.get('REDIS_CACHE_URL', REDIS_URL)
 CACHES = {
     'default': {
         'BACKEND': 'django_redis.cache.RedisCache',
@@ -181,7 +211,7 @@ CACHES = {
     }
 }
 
-# Django Q2 — broker on separate Redis DB from cache (REDIS_Q_URL or REDIS_Q_*)
+# Django Q2 — broker via Redis URL (defaults to REDIS_URL).
 def _parse_redis_url(url: str) -> dict:
     u = urlparse(url)
     path = (u.path or '').lstrip('/')
@@ -194,7 +224,7 @@ def _parse_redis_url(url: str) -> dict:
     }
 
 
-REDIS_Q_URL = os.environ.get('REDIS_Q_URL', 'redis://127.0.0.1:6379/2')
+REDIS_Q_URL = os.environ.get('REDIS_Q_URL', REDIS_URL)
 _q_redis = _parse_redis_url(REDIS_Q_URL)
 if os.environ.get('REDIS_Q_HOST'):
     _q_redis['host'] = os.environ['REDIS_Q_HOST']
@@ -221,11 +251,23 @@ YFINANCE_MOCK = os.environ.get('YFINANCE_MOCK', '0').lower() in (
 )
 PRICE_CACHE_TTL = int(os.environ.get('PRICE_CACHE_TTL', '120'))
 
-# Email (Phase D): console backend for dev; set SMTP_* + EMAIL_BACKEND in production.
-EMAIL_BACKEND = os.environ.get(
-    'EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend'
+# Email: console in dev by default; Gmail SMTP when USE_GMAIL_SMTP=1.
+USE_GMAIL_SMTP = os.environ.get('USE_GMAIL_SMTP', '0').lower() in ('1', 'true', 'yes')
+if USE_GMAIL_SMTP:
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
+    EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587'))
+    EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', '1').lower() in ('1', 'true', 'yes')
+    EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+    EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+else:
+    EMAIL_BACKEND = os.environ.get(
+        'EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend'
+    )
+
+DEFAULT_FROM_EMAIL = os.environ.get(
+    'DEFAULT_FROM_EMAIL', os.environ.get('EMAIL_HOST_USER', 'noreply@stock-subscription.local')
 )
-DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@stock-subscription.local')
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
 
 # OpenAI (demo signals — not financial advice)

@@ -389,7 +389,7 @@ Content-Type: application/json
 **行为（与 `spec.md` §6 一致）**
 
 - 以该行的 **`owner`** 与 **`subscriber_email`**（不区分大小写）为键，查出**同一用户、同一收件邮箱**下的**全部** `Subscription` 行。
-- 按 **`subscriber_email`** 分组；**每一组发送一封 HTML 邮件**（控制台后端下内容打印在 **runserver 终端**）。
+- 按 **`subscriber_email`** 分组；通过 Django-Q2 **异步入队**，由 worker 执行发送（不阻塞请求响应）。
 - 每组内所有 ticker：先取价（`get_price`），再 **一次 OpenAI（`gpt-4o`，可 `OPENAI_MODEL` 覆盖）批量**生成每条 Demo 的 Buy/Hold/Sell + 理由；失败时使用占位文案。
 - 发送成功后，更新该组内每条订阅的 **`last_notified_price`**、**`last_notified_time`**。
 
@@ -400,21 +400,22 @@ Content-Type: application/json
 {}
 ```
 
-**成功响应** `200 OK`
+**成功响应** `202 Accepted`
 
 ```json
 {
-  "status": "sent",
+  "status": "queued",
   "emails_sent": 1,
   "groups": 1,
-  "subscribers": ["notify@example.com"]
+  "subscribers": ["notify@example.com"],
+  "task_id": "..."
 }
 ```
 
 | 字段 | 说明 |
 |------|------|
-| `emails_sent` | 实际发出的邮件封数（按收件邮箱计）。 |
-| `groups` | 本请求合并出的分组数（通常与 `subscriber_email` 种类数一致）。 |
+| `emails_sent` | 已入队的发送任务组数（按收件邮箱组计）。 |
+| `groups` | 与 `emails_sent` 一致，表示本次入队组数。 |
 | `subscribers` | 收件邮箱列表。 |
 
 **失败响应** `502 Bad Gateway` — 发信异常（如 SMTP 未配好且非 console）。
@@ -442,18 +443,19 @@ Content-Type: application/json
 
 **行为**
 
-- 按 `(owner, subscriber_email)` 分组后发送；
-- 每组调用同一套合并邮件发送链路（与 2.7 保持一致）；
+- 按 `(owner, subscriber_email)` 分组后异步入队；
+- 每组由 worker 调用同一套合并邮件发送链路（与 2.7 保持一致）；
 - 用于前端 `Manage Subscriptions` 区域的一键操作按钮。
 
-**成功响应** `200 OK`
+**成功响应** `202 Accepted`
 
 ```json
 {
-  "status": "sent",
+  "status": "queued",
   "emails_sent": 2,
   "groups": 2,
-  "subscribers": ["a@example.com", "b@example.com"]
+  "subscribers": ["a@example.com", "b@example.com"],
+  "task_ids": ["...", "..."]
 }
 ```
 
@@ -466,7 +468,7 @@ Content-Type: application/json
 | **Method / Path** | `POST /api/subscriptions/owners/<owner_id>/send_now/` |
 | **鉴权** | 需登录；管理员用于对单个 owner 一键发送。 |
 
-说明：仅对该 owner 的订阅执行分组合并发送（按 `subscriber_email`）。
+说明：仅对该 owner 的订阅执行分组合并发送（按 `subscriber_email`），并异步入队执行。
 
 ### 2.10 Admin 代用户创建订阅
 

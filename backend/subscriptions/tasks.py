@@ -92,3 +92,16 @@ def run_hourly_checks() -> dict:
 
     logger.info('run_hourly_checks: %s', aggregated)
     return {'status': 'ok', **aggregated}
+
+
+def send_now_group(owner_id: int, subscriber_email: str) -> dict:
+    """
+    Async task entry for Send Now.
+    Send one merged email group for (owner_id, subscriber_email).
+    """
+    user = get_user_model().objects.get(pk=owner_id)
+    merged_qs = Subscription.objects.filter(
+        owner_id=owner_id,
+        subscriber_email__iexact=subscriber_email,
+    )
+    return send_subscription_emails(user, merged_qs)
